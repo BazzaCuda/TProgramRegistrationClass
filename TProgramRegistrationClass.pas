@@ -1,7 +1,7 @@
 unit TProgramRegistrationClass;
 {   TProgRegistrationClass
     Copyright (C) 2024 Baz Cuda
-    https://github.com/BazzaCuda/TProgRegistrationClass
+    https://github.com/BazzaCuda/TProgramRegistrationClass
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ type
     {property fields}
     FAppArgs:         string;
     FClientType:      string;
-    FProgIDPrefix:    string; // a unique identifier
+    FProgIDPrefix:    string;
     FFriendlyAppName: string;
     FFullPathToExe:   string;
     FFullPathToIco:   string;
@@ -55,14 +55,14 @@ type
     function registerSupportedType(const aExtension: string):       boolean;
     function registerSysFileType(const aSysFileType: string):       boolean; // e.g. audio, video
 
-    function registerExtension(const aExtension: string; const aFriendlyName: string; const aMimeType: string; const aPerceivedType: string): boolean;
+    function registerExtension(const aExtension: string; const aFriendlyName: string; const aMimeType: string = ''; const aPerceivedType: string = ''): boolean;
 
     property appArgs:         string read FAppArgs         write FAppArgs;
     property clientType:      string read FClientType      write FClientType; // e.g. media
     property friendlyAppName: string read FFriendlyAppName write FFriendlyAppName;
     property fullPathToExe:   string read FFullPathToExe   write FFullPathToExe;
     property fullPathToIco:   string read FFullPathToIco   write FFullPathToIco; // optional separate icon file
-    property progIDPrefix:    string read FProgIDPrefix    write FProgIDPrefix;
+    property progIDPrefix:    string read FProgIDPrefix    write FProgIDPrefix;  // a unique identifier
     property regRoot:         HKEY   read FRegRoot         write FRegRoot;
   end;
 
@@ -75,9 +75,9 @@ const
   KEY_APPLICATIONS     = 'Applications\';
   KEY_SYSFILE_ASSOCS   = 'SystemFileAssociations\';
 
-{ TProgRegistration }
+{ TProgramRegistration }
 
-constructor TProgRegistration.Create;
+constructor TProgramRegistration.Create;
 begin
   inherited;
   FReg := TRegistry.create(KEY_READ OR KEY_WRITE);
@@ -85,43 +85,43 @@ begin
   FAppArgs := '"%1"';
 end;
 
-destructor TProgRegistration.Destroy;
+destructor TProgramRegistration.Destroy;
 begin
   case FReg <> NIL of TRUE: FReg.free; end;
   inherited;
 end;
 
-function TProgRegistration.exeFileName: string;
+function TProgramRegistration.exeFileName: string;
 begin
   result := extractFileName(FFullPathToExe);
 end;
 
-function TProgRegistration.getApplicationsKey: string;
+function TProgramRegistration.getApplicationsKey: string;
 begin
   result := KEY_SOFTWARE_CLASSES + KEY_APPLICATIONS + exeFileName + '\';
 end;
 
-function TProgRegistration.getCapabilitiesKey: string;
+function TProgramRegistration.getCapabilitiesKey: string;
 begin
   result := KEY_SOFTWARE_CLIENTS + FClientType + '\' + FFriendlyAppName + '\' + 'Capabilities\';
 end;
 
-function TProgRegistration.getFileAssociationsKey: string;
+function TProgramRegistration.getFileAssociationsKey: string;
 begin
   result := getCapabilitiesKey + 'FileAssociations\';
 end;
 
-function TProgRegistration.getProgID(const aExtension: string): string;
+function TProgramRegistration.getProgID(const aExtension: string): string;
 begin
   result := FProgIDPrefix + aExtension;
 end;
 
-function TProgRegistration.getSupportedTypesKey: string;
+function TProgramRegistration.getSupportedTypesKey: string;
 begin
   result := KEY_SOFTWARE_CLASSES + KEY_APPLICATIONS + exeFileName + '\' + 'SupportedTypes\';
 end;
 
-function TProgRegistration.registerApp: boolean;
+function TProgramRegistration.registerApp: boolean;
 begin
   result := FALSE;
   FReg.rootKey := FRegRoot;
@@ -134,7 +134,7 @@ begin
   result := TRUE;
 end;
 
-function TProgRegistration.registerAppPath: boolean;
+function TProgramRegistration.registerAppPath: boolean;
 begin
   result := FALSE;
   FReg.rootKey := FRegRoot;
@@ -148,7 +148,7 @@ begin
   result := TRUE;
 end;
 
-function TProgRegistration.registerAppVerbs(const aKey: string): boolean;
+function TProgramRegistration.registerAppVerbs(const aKey: string): boolean;
 // registerAppVerbs(getApplicationsKey)
 begin
   result := FALSE;
@@ -187,7 +187,7 @@ begin
   result := TRUE;
 end;
 
-function TProgRegistration.registerClientCapabilities: boolean;
+function TProgramRegistration.registerClientCapabilities: boolean;
 begin
   result := FALSE;
 
@@ -200,7 +200,7 @@ begin
   result := TRUE;
 end;
 
-function TProgRegistration.registerExtension(const aExtension, aFriendlyName, aMimeType, aPerceivedType: string): boolean;
+function TProgramRegistration.registerExtension(const aExtension: string; const aFriendlyName: string; const aMimeType: string = ''; const aPerceivedType: string = ''): boolean;
 
   function getExtKey: string;
   begin
@@ -247,7 +247,7 @@ begin
   result := TRUE;
 end;
 
-function TProgRegistration.registerFileAssociation(const aExtension: string): boolean;
+function TProgramRegistration.registerFileAssociation(const aExtension: string): boolean;
 begin
   // add extension to the Default Programs control panel
   case FReg.openKey(getFileAssociationsKey, TRUE) of FALSE: EXIT; end;
@@ -256,7 +256,7 @@ begin
   FReg.closeKey;
 end;
 
-function TProgRegistration.registerSupportedType(const aExtension: string): boolean;
+function TProgramRegistration.registerSupportedType(const aExtension: string): boolean;
 begin
   case FReg.openKey(getSupportedTypesKey, TRUE) of FALSE: EXIT; end;
 
@@ -264,7 +264,7 @@ begin
   FReg.closeKey;
 end;
 
-function TProgRegistration.registerSysFileType(const aSysFileType: string): boolean;
+function TProgramRegistration.registerSysFileType(const aSysFileType: string): boolean;
 begin
   result := FALSE;
 
