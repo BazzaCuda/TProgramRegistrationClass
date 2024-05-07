@@ -1,2 +1,2 @@
-# TProgRegistrationClass
+# TProgramRegistrationClass
  
