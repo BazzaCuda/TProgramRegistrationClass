@@ -29,7 +29,7 @@ Example:
         pr.registerSysFileType;        // e.g. audio, optional
         pr.registerClientCapabilities; // e.g. Media, optional
 
-        case pr.registerExtension('.wav', 'Wave Audio', 'audio/wav', 'audio'); // extension, friendly name, mime type, perceived type
+        case pr.registerExtension('.wav', 'Wave Audio', 'audio/wav', 'audio'); // extension, friendly name, mime type (optional), perceived type (optional)
       finally
         pr.free;
       end;
