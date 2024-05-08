@@ -13,4 +13,23 @@ I was able to use their work as a blueprint for creating this TProgramRegistrati
 I have provided a fully-tested test program to illustrate (I hope) how to use the class. The ultimate test was that I successfully used the enclosed test program to re-register my media player and associate .wav files with it.
 
 As this class writes directly to the Windows Registry, I of course recommend that you set a restore point to take a backup of your registry before making significant changes, especially while developing your own code using this class. I have happily used this code on my own machine, however I shall not be held responsible for any errors or issues that using this code in your projects may or may not cause.
+
+Example:
  
+      pr := TProgramRegistration.create;
+      try
+        pr.fullPathToExe   := 'C:\myapp.exe'; // In addition, you can also set pr.fullPathToIco to specify a separate .ico icon file or any valid icon registry entry, e.g. %ProgramFiles%\Internet Explorer\hmmapi.dll,1
+        pr.friendlyAppName := 'My Awesome App';
+        pr.sysFileType     := 'audio'; // optional
+        pr.clientType      := 'Media'; // optional
+        pr.progIDPrefix    := 'my.awesomeApp'; // unique prefix, creates e.g. HKEY_LOCAL_MACHINE\SOFTWARE\Classes\my.awesomeApp.wav\
+
+        pr.registerAppPath;
+        pr.registerAppName;
+        pr.registerSysFileType;        // e.g. audio, optional
+        pr.registerClientCapabilities; // e.g. Media, optional
+
+        case pr.registerExtension('.wav', 'Wave Audio', 'audio/wav', 'audio'); // extension, friendly name, mime type, perceived type
+      finally
+        pr.free;
+      end;
