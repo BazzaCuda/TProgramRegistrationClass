@@ -49,12 +49,14 @@ type
     function getCapabilitiesKey:                                    string;
     function getFileAssociationsKey:                                string;
     function getProgID(const aExtension: string):                   string;
+    function getRegisteredApplicationsKey:                          string;
     function getSupportedTypesKey:                                  string;
     function registerAppPath:                                       boolean;
     function registerAppName:                                       boolean;
     function registerAppVerbs(const aKey: string):                  boolean;
     function registerClientCapabilities:                            boolean; // e.g. media
     function registerFileAssociation(const aExtension: string):     boolean;
+    function registerRegisteredApplication:                         boolean;
     function registerSupportedType(const aExtension: string):       boolean;
     function registerSysFileType:                                   boolean; // e.g. audio, video
 
@@ -78,6 +80,7 @@ const
   KEY_SOFTWARE_CLIENTS = 'SOFTWARE\Clients\';
   KEY_APPLICATIONS     = 'Applications\';
   KEY_SYSFILE_ASSOCS   = 'SystemFileAssociations\';
+  KEY_REGISTERED_APPS  = 'SOFTWARE\RegisteredApplications\';
 
 { TProgramRegistration }
 
@@ -118,6 +121,11 @@ end;
 function TProgramRegistration.getProgID(const aExtension: string): string;
 begin
   result := FProgIDPrefix + aExtension;
+end;
+
+function TProgramRegistration.getRegisteredApplicationsKey: string;
+begin
+  result := KEY_REGISTERED_APPS;
 end;
 
 function TProgramRegistration.getSupportedTypesKey: string;
@@ -212,7 +220,10 @@ begin
 
   FReg.writeString('ApplicationName', FFriendlyAppName);
   FReg.writeString('ApplicationDescription', FFriendlyAppName);
+  FReg.rootKey := FRegRoot;
   FReg.closeKey;
+
+  registerRegisteredApplication;
 
   result := TRUE;
 end;
@@ -283,6 +294,20 @@ begin
   case FReg.openKey(getFileAssociationsKey, TRUE) of FALSE: EXIT; end;
 
   FReg.writeString(aExtension, getProgID(aExtension));
+  FReg.closeKey;
+
+  result := TRUE;
+end;
+
+function TProgramRegistration.registerRegisteredApplication: boolean;
+// see HKEY_LOCAL_MACHINE\SOFTWARE\RegisteredApplications\
+begin
+  result       := FALSE;
+  FReg.rootKey := FRegRoot;
+
+  case FReg.openKey(getRegisteredApplicationsKey, TRUE) of FALSE: EXIT; end;
+
+  FReg.writeString(FFriendlyAppName, getCapabilitiesKey);
   FReg.closeKey;
 
   result := TRUE;
