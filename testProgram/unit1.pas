@@ -54,7 +54,9 @@ begin
   try
     pr.fullPathToExe := edtFullPathToExe.text;
     case pr.registerAppPath of  TRUE: lblResult.caption := 'register app path = TRUE';
-                               FALSE: lblResult.caption := 'register app path = FALSE'; end
+                               FALSE: lblResult.caption := 'register app path = FALSE'; end;
+
+    pr.refreshDesktop;
 
   finally
     pr.free;
@@ -70,7 +72,9 @@ begin
     pr.fullPathToExe   := edtFullPathToExe.text;
     pr.friendlyAppName := edtFriendlyAppName.text;
     case pr.registerAppName of  TRUE: lblResult.caption := 'register app name = TRUE';
-                               FALSE: lblResult.caption := 'register app name = FALSE'; end
+                               FALSE: lblResult.caption := 'register app name = FALSE'; end;
+
+    pr.refreshDesktop;
 
   finally
     pr.free;
@@ -87,7 +91,8 @@ begin
     pr.fullPathToExe   := edtFullPathToExe.text;
     pr.sysFileType     := edtSystemFileType.text; // e.g. audio
     case pr.registerSysFileType of  TRUE: lblResult.caption := 'register sys file type = TRUE';
-                                   FALSE: lblResult.caption := 'register sys file type = FALSE'; end
+                                   FALSE: lblResult.caption := 'register sys file type = FALSE'; end;
+    pr.refreshDesktop;
 
   finally
     pr.free;
@@ -104,7 +109,8 @@ begin
     pr.friendlyAppName := edtFriendlyAppName.text;
     pr.clientType      := edtCapabilitiesType.text; // e.g. Media
     case pr.registerClientCapabilities of  TRUE: lblResult.caption := 'register capabilities = TRUE';
-                                          FALSE: lblResult.caption := 'register capabilities = FALSE'; end
+                                          FALSE: lblResult.caption := 'register capabilities = FALSE'; end;
+    pr.refreshDesktop;
 
   finally
     pr.free;
@@ -119,7 +125,8 @@ begin
     pr.fullPathToExe   := edtFullPathToExe.text; // for the icon. Alternatively, set pr.fullPathToIco
     pr.progIDPrefix    := edtProgIDPrefix.text;  // creates e.g. HKEY_LOCAL_MACHINE\SOFTWARE\Classes\my.app.wav
     case pr.registerExtension(edtExtension.text, edtExtFriendlyName.text, edtMimeType.text, edtPerceivedType.text) of  TRUE: lblResult.caption := 'register extension = TRUE';
-                                                                                                                      FALSE: lblResult.caption := 'register extension = FALSE'; end
+                                                                                                                      FALSE: lblResult.caption := 'register extension = FALSE'; end;
+    pr.refreshDesktop;
 
   finally
     pr.free;
@@ -152,7 +159,9 @@ begin
     case pr.registerClientCapabilities of FALSE: EXIT; end; // e.g. Media, optional
 
     case pr.registerExtension(edtExtension.text, edtExtFriendlyName.text, edtMimeType.text, edtPerceivedType.text) of  TRUE: lblResult.caption := 'register extension = TRUE';
-                                                                                                                      FALSE: lblResult.caption := 'register extension = FALSE'; end
+                                                                                                                      FALSE: lblResult.caption := 'register extension = FALSE'; end;
+
+    pr.refreshDesktop;
 
   finally
     pr.free;

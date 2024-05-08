@@ -21,7 +21,7 @@ unit TProgramRegistrationClass;
 interface
 
 uses
-  system.win.registry, winApi.windows, system.sysUtils;
+  system.win.registry, winApi.windows, system.sysUtils, winApi.ShlObj;
 
 type
   TProgramRegistration = class(TObject)
@@ -61,6 +61,8 @@ type
     function registerSysFileType:                                   boolean; // e.g. audio, video
 
     function registerExtension(const aExtension: string; const aFriendlyName: string; const aMimeType: string = ''; const aPerceivedType: string = ''): boolean;
+
+    function refreshDesktop: boolean;
 
     property appArgs:         string read FAppArgs         write FAppArgs;
     property clientType:      string read FClientType      write FClientType; // e.g. media
@@ -136,6 +138,11 @@ end;
 function TProgramRegistration.getSysFileAssocsKey: string;
 begin
   result := KEY_SOFTWARE_CLASSES + KEY_SYSFILE_ASSOCS + FSysFileType + '\' + 'OpenWithList\' + exeFileName + '\';
+end;
+
+function TProgramRegistration.refreshDesktop: boolean;
+begin
+  SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, 0, 0);
 end;
 
 function TProgramRegistration.registerAppName: boolean;
