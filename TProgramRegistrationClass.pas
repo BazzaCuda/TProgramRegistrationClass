@@ -36,6 +36,9 @@ type
     FFullPathToExe:   string;
     FFullPathToIco:   string;
     FRegRoot:         HKEY;
+    FSysFileType: string;
+  private
+    function getSysFileAssocsKey: string;
 
   public
     constructor Create;
@@ -48,12 +51,12 @@ type
     function getProgID(const aExtension: string):                   string;
     function getSupportedTypesKey:                                  string;
     function registerAppPath:                                       boolean;
-    function registerApp:                                           boolean;
+    function registerAppName:                                       boolean;
     function registerAppVerbs(const aKey: string):                  boolean;
     function registerClientCapabilities:                            boolean; // e.g. media
     function registerFileAssociation(const aExtension: string):     boolean;
     function registerSupportedType(const aExtension: string):       boolean;
-    function registerSysFileType(const aSysFileType: string):       boolean; // e.g. audio, video
+    function registerSysFileType:                                   boolean; // e.g. audio, video
 
     function registerExtension(const aExtension: string; const aFriendlyName: string; const aMimeType: string = ''; const aPerceivedType: string = ''): boolean;
 
@@ -64,6 +67,7 @@ type
     property fullPathToIco:   string read FFullPathToIco   write FFullPathToIco; // optional separate icon file
     property progIDPrefix:    string read FProgIDPrefix    write FProgIDPrefix;  // a unique identifier
     property regRoot:         HKEY   read FRegRoot         write FRegRoot;
+    property sysFileType:     string read FSysFileType     write FSysFileType;
   end;
 
 implementation
@@ -121,22 +125,29 @@ begin
   result := KEY_SOFTWARE_CLASSES + KEY_APPLICATIONS + exeFileName + '\' + 'SupportedTypes\';
 end;
 
-function TProgramRegistration.registerApp: boolean;
+function TProgramRegistration.getSysFileAssocsKey: string;
 begin
-  result := FALSE;
+  result := KEY_SOFTWARE_CLASSES + KEY_SYSFILE_ASSOCS + FSysFileType + '\' + 'OpenWithList\' + exeFileName + '\';
+end;
+
+function TProgramRegistration.registerAppName: boolean;
+begin
+  result       := FALSE;
   FReg.rootKey := FRegRoot;
 
+  // HKEY_LOCAL_MACHINE\SOFTWARE\Classes\Applications\your.exe\
   case FReg.openKey(KEY_SOFTWARE_CLASSES + KEY_APPLICATIONS + exeFileName, TRUE) of FALSE: EXIT; end;
 
   FReg.writeString('FriendlyAppName', FFriendlyAppName);
   FReg.closeKey;
 
-  result := TRUE;
+  result := registerAppVerbs(KEY_SOFTWARE_CLASSES + KEY_APPLICATIONS + exeFileName + '\');
 end;
 
 function TProgramRegistration.registerAppPath: boolean;
+// HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\your.exe
 begin
-  result := FALSE;
+  result       := FALSE;
   FReg.rootKey := FRegRoot;
 
   case FReg.openKey(KEY_APP_PATHS + exeFileName, TRUE) of FALSE: EXIT; end;
@@ -151,7 +162,7 @@ end;
 function TProgramRegistration.registerAppVerbs(const aKey: string): boolean;
 // registerAppVerbs(getApplicationsKey)
 begin
-  result := FALSE;
+  result       := FALSE;
   FReg.rootKey := FRegRoot;
 
   case FReg.openKey(aKey + 'shell\', TRUE) of FALSE: EXIT;end;
@@ -159,6 +170,7 @@ begin
   // set the default verb to Play
   FReg.writeString('', 'Play');
   FReg.closeKey;
+  FReg.rootKey := FRegRoot;
 
   // add "open" verb
   case FReg.openKey(aKey + 'shell\open\', TRUE) of FALSE: EXIT; end;
@@ -166,17 +178,20 @@ begin
   // Hide the "open" verb from the context menu, since it's the same as "play"
   FReg.writeString('LegacyDisable', '');
   FReg.closeKey;
+  FReg.rootKey := FRegRoot;
 
   case FReg.openKey(aKey + 'shell\open\command\', TRUE) of FALSE: EXIT; end;
 
   // set open command = "fullpathtoexe" "%1" or "fullpathtoexe" followed by the caller-supplied args
   FReg.writeString('', '"' + FFullPathToExe + '"' + ' ' + FAppArgs);
   FReg.closeKey;
+  FReg.rootKey := FRegRoot;
 
   // add "play" verb
   case FReg.openKey(aKey + 'shell\play\', TRUE) of FALSE: EXIT; end;
   FReg.writeString('', '&Play');
   FReg.closeKey;
+  FReg.rootKey := FRegRoot;
 
   case FReg.openKey(aKey + 'shell\play\command\', TRUE) of FALSE: EXIT; end;
 
@@ -188,10 +203,12 @@ begin
 end;
 
 function TProgramRegistration.registerClientCapabilities: boolean;
+// HKEY_LOCAL_MACHINE\SOFTWARE\Clients\<ClientType>\<your app>\Capabilities\
 begin
-  result := FALSE;
+  result       := FALSE;
+  FReg.rootKey := FRegRoot;
 
-  case FReg.openKey(KEY_SOFTWARE_CLIENTS + FClientType + '\' + FFriendlyAppName + '\' + 'Capabilities\', TRUE) of FALSE: EXIT; end;
+  case FReg.openKey(getCapabilitiesKey, TRUE) of FALSE: EXIT; end;
 
   FReg.writeString('ApplicationName', FFriendlyAppName);
   FReg.writeString('ApplicationDescription', FFriendlyAppName);
@@ -213,21 +230,24 @@ function TProgramRegistration.registerExtension(const aExtension: string; const 
   end;
 
 begin
-  result := FALSE;
+  result       := FALSE;
+  FReg.rootKey := FRegRoot;
 
-  // create ProgID
+  // create ProgID - HKEY_CLASSES_ROOT\<yourPrefix>.ext
   case FReg.openKey(getProgIDExtKey, TRUE) of FALSE: EXIT; end;
 
   FReg.writeString('', aFriendlyName);
   FReg.writeInteger('EditFlags', 65536); // FTA_OpenIsSafe
   FReg.writeString('FriendlyTypeName', aFriendlyName);
   FReg.closeKey;
+  FReg.rootKey := FRegRoot;
 
   case FReg.openKey(getProgIDExtKey + 'DefaultIcon\', TRUE) of FALSE: EXIT; end;
 
   case FFullPathToIco = '' of  TRUE: FReg.writeString('', FFullPathToExe + ',0');
                               FALSE: FReg.writeString('', FFullPathToIco); end;
   FReg.closeKey;
+  FReg.rootKey := FRegRoot;
 
   registerAppVerbs(getProgIDExtKey);
 
@@ -238,37 +258,56 @@ begin
   case aMimeType      <> '' of TRUE: FReg.writeString('Content Type', aMimeType); end;
   case aPerceivedType <> '' of TRUE: FReg.writeString('PerceivedType', aPerceivedType); end;
   FReg.closeKey;
+  FReg.rootKey := FRegRoot;
 
+  // HKEY_CLASSES_ROOT\.ext\OpenWithProgIds
   case FReg.openKey(getExtKey + 'OpenWithProgIDs\', TRUE) of FALSE: EXIT; end;
 
   FReg.writeString(getProgID(aExtension), '');
   FReg.closeKey;
+  FReg.rootKey := FRegRoot;
+
+  registerSupportedType(aExtension);
+  registerFileAssociation(aExtension);
 
   result := TRUE;
 end;
 
 function TProgramRegistration.registerFileAssociation(const aExtension: string): boolean;
+// see HKEY_LOCAL_MACHINE\SOFTWARE\Clients\Capabilities\FileAssociations\
 begin
+  result       := FALSE;
+  FReg.rootKey := FRegRoot;
+
   // add extension to the Default Programs control panel
   case FReg.openKey(getFileAssociationsKey, TRUE) of FALSE: EXIT; end;
 
   FReg.writeString(aExtension, getProgID(aExtension));
   FReg.closeKey;
+
+  result := TRUE;
 end;
 
 function TProgramRegistration.registerSupportedType(const aExtension: string): boolean;
+// see HKEY_LOCAL_MACHINE\SOFTWARE\Classes\Applications\your.exe\SupportedTypes\
 begin
+  result       := FALSE;
+  FReg.rootKey := FRegRoot;
+
   case FReg.openKey(getSupportedTypesKey, TRUE) of FALSE: EXIT; end;
 
   FReg.writeString(aExtension, '');
   FReg.closeKey;
+
+  result := TRUE;
 end;
 
-function TProgramRegistration.registerSysFileType(const aSysFileType: string): boolean;
+function TProgramRegistration.registerSysFileType: boolean;
 begin
-  result := FALSE;
+  result       := FALSE;
+  FReg.rootKey := FRegRoot;
 
-  case FReg.openKey(KEY_SOFTWARE_CLASSES + KEY_SYSFILE_ASSOCS + aSysFileType + '\' + 'OpenWithList\' + exeFileName, TRUE) of FALSE: EXIT; end;
+  case FReg.openKey(getSysFileAssocsKey, TRUE) of FALSE: EXIT; end;
   FReg.closeKey;
 
   result := TRUE;
