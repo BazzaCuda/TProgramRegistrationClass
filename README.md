@@ -29,6 +29,7 @@ Example:
         pr.registerSysFileType;        // e.g. audio, optional
         pr.registerClientCapabilities; // e.g. Media, optional
 
+        case pr.registerExtension('.fld', 'My Awesome App data file'); // custom extension, friendly name
         case pr.registerExtension('.wav', 'Wave Audio', 'audio/wav', 'audio'); // extension, friendly name, mime type (optional), perceived type (optional)
       finally
         pr.free;
