@@ -12,7 +12,5 @@ I was able to use their work as a blueprint for creating this TProgramRegistrati
 
 I have provided a fully-tested test program to illustrate (I hope) how to use the class. The ultimate test was that I successfully used the enclosed test program to re-register my media player and associate .wav files with it.
 
-
-
-
+As this class writes directly to the Windows Registry, I of course recommend that you set a restore point to take a backup of your registry before making significant changes, especially while developing your own code using this class. I have happily used this code on my own machine, however I shall not be held responsible for any errors or issues that using this code in your projects may or may not cause.
  
