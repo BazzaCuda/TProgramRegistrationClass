@@ -31,6 +31,8 @@ Example:
 
         case pr.registerExtension('.mad', 'My Awesome App data file'); // custom extension, friendly name
         case pr.registerExtension('.wav', 'Wave Audio', 'audio/wav', 'audio'); // extension, friendly name, mime type (optional), perceived type (optional)
+
+        pr.refreshDesktop;
       finally
         pr.free;
       end;
